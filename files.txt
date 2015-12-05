@@ -1,5 +1,0 @@
-Files:
-
-1. sample_data
-2. sample_project which uses the sample data (all the data needed to perform the example calculations)
-3. plugin folder 'GreenSpace' to be copied to the user's plugin folder
