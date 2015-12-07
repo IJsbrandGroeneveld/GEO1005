@@ -7,8 +7,8 @@
                              -------------------
         begin                : 2015-12-03
         git sha              : $Format:%H$
-        copyright            : (C) 2015 by Rob Braggaar
-        email                : r.c.braggaar@outlook.com
+        copyright            : (C) 2015 by TU Delft
+        email                :
  ***************************************************************************/
 
 /***************************************************************************
@@ -29,7 +29,7 @@ from PyQt4.QtCore import pyqtSignal
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'green_space_dockwidget_base.ui'))
 
-# brenda
+
 class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
 
     closingPlugin = pyqtSignal()
