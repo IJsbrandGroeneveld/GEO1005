@@ -29,7 +29,7 @@ from PyQt4.QtCore import pyqtSignal
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
     os.path.dirname(__file__), 'green_space_dockwidget_base.ui'))
 
-
+# brenda
 class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
 
     closingPlugin = pyqtSignal()
