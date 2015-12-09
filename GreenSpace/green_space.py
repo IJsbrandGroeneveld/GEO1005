@@ -7,8 +7,8 @@
                               -------------------
         begin                : 2015-12-03
         git sha              : $Format:%H$
-        copyright            : (C) 2015 by R
-        email                : R
+        copyright            : (C) 2015 by Rob Braggaar, IJsbrand Groeneveld and Brenda Olsen
+        email                : -
  ***************************************************************************/
 
 /***************************************************************************
@@ -22,6 +22,8 @@
 """
 from PyQt4.QtCore import QSettings, QTranslator, qVersion, QCoreApplication, Qt
 from PyQt4.QtGui import QAction, QIcon
+from qgis.core import *
+
 # Initialize Qt resources from file resources.py
 import resources
 
@@ -215,7 +217,6 @@ class GreenSpace:
     def run(self):
         """Run method that loads and starts the plugin"""
 
-
         if not self.pluginIsActive:
             self.pluginIsActive = True
 
@@ -226,7 +227,7 @@ class GreenSpace:
             #    removed on close (see self.onClosePlugin method)
             if self.dockwidget == None:
                 # Create the dockwidget (after translation) and keep reference
-                self.dockwidget = GreenSpaceDockWidget()
+                self.dockwidget = GreenSpaceDockWidget(self.iface)
 
             # connect to provide cleanup on closing of dockwidget
             self.dockwidget.closingPlugin.connect(self.onClosePlugin)

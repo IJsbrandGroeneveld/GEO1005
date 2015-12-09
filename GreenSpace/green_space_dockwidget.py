@@ -22,9 +22,14 @@
 """
 # module imports
 import os
+import os.path
+import processing
+from qgis.core import *
 
 from PyQt4 import QtGui, uic
 from PyQt4.QtCore import pyqtSignal
+
+# import the utility functions file
 from . import utility_functions as uf
 
 FORM_CLASS, _ = uic.loadUiType(os.path.join(
@@ -35,7 +40,7 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
 
     closingPlugin = pyqtSignal()
 
-    def __init__(self, parent=None):
+    def __init__(self, iface, parent=None):
         """Constructor."""
         super(GreenSpaceDockWidget, self).__init__(parent)
         # Set up the user interface from Designer.
@@ -45,7 +50,37 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
+        # define globals
+        self.iface = iface
+        self.canvas = self.iface.mapCanvas()
+
+        # set up GUI operation signals
+        # data
+        self.selectLayerCombo.activated.connect(self.setSelectedLayer)
+
+        # initialisation
+        self.updateLayers()
+
     def closeEvent(self, event):
         self.closingPlugin.emit()
         event.accept()
 
+    def updateLayers(self):
+        layers = uf.getLegendLayers(self.iface, 'all', 'all')
+        self.selectLayerCombo.clear()
+        if layers:
+            layer_names = uf.getLayersListNames(layers)
+            self.selectLayerCombo.addItems(layer_names)
+            self.setSelectedLayer()
+        #else:
+         #   self.selectAttributeCombo.clear()
+
+    def setSelectedLayer(self):
+        layer_name = self.selectLayerCombo.currentText()
+        layer = uf.getLegendLayerByName(self.iface,layer_name)
+        #self.updateAttributes(layer)
+
+    def getSelectedLayer(self):
+        layer_name = self.selectLayerCombo.currentText()
+        layer = uf.getLegendLayerByName(self.iface,layer_name)
+        return layer

@@ -6,8 +6,8 @@
  This tool can be used to support green area planning in the built environment.
                              -------------------
         begin                : 2015-12-03
-        copyright            : (C) 2015 by Rob Braggaar
-        email                : r.c.braggaar@outlook.com
+        copyright            : (C) 2015 by Rob Braggaar, IJsbrand Groeneveld and Brenda Olsen
+        email                : -
         git sha              : $Format:%H$
  ***************************************************************************/
 
