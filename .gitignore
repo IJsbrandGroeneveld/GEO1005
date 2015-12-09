@@ -1,5 +1,5 @@
 # ignore lock files (~)
 *.qgs~
 
-# ignore pycharm project files
-*.idea
+# ignore pycharm project folder
+idea/**
