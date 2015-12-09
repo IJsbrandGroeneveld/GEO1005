@@ -2,4 +2,4 @@
 *.qgs~
 
 # ignore pycharm project folder
-idea/**
+.idea/**
