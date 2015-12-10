@@ -26,7 +26,7 @@ import os.path
 import processing
 from qgis.core import *
 
-from PyQt4 import QtGui, uic
+from PyQt4 import QtGui, uic, QtCore
 from PyQt4.QtCore import pyqtSignal
 
 # import the utility functions file
@@ -55,8 +55,13 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.canvas = self.iface.mapCanvas()
 
         # set up GUI operation signals
-        # data
+        # area boundary
         self.selectLayerCombo.activated.connect(self.setSelectedLayer)
+        # buffer distance
+        self.bufferLineEdit.clicked.connect(self.selectFeaturesBuffer)
+       # create the buffer
+       # self.bufferPushButton.connect(self.calculateBuffer)
+
 
         # initialisation
         self.updateLayers()
@@ -65,6 +70,7 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.closingPlugin.emit()
         event.accept()
 
+    # layer functions
     def updateLayers(self):
         layers = uf.getLegendLayers(self.iface, 'all', 'all')
         self.selectLayerCombo.clear()
@@ -84,3 +90,45 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         layer_name = self.selectLayerCombo.currentText()
         layer = uf.getLegendLayerByName(self.iface,layer_name)
         return layer
+
+    # buffer functions
+    def getBufferCutoff(self):
+        cutoff = self.bufferCutoffEdit.text()
+        if uf.isNumeric(cutoff):
+            return uf.convertNumeric(cutoff)
+        else:
+            return 0
+
+    def selectFeaturesBuffer(self):
+        layer = self.getSelectedLayer()
+        buffer_layer = uf.getLegendLayerByName(self.iface, "Buffers")
+        if buffer_layer and layer:
+            uf.selectFeaturesByIntersection(layer, buffer_layer, True)
+
+    def calculateBuffer(self):
+        origins = self.getSelectedLayer().selectedFeatures()
+        layer = self.getSelectedLayer()
+        if origins > 0:
+            cutoff_distance = self.getBufferCutoff()
+            buffers = {}
+            for point in origins:
+                geom = point.geometry()
+                buffers[point.id()] = geom.buffer(cutoff_distance,12).asPolygon()
+            # store the buffer results in temporary layer called "Buffers"
+            buffer_layer = uf.getLegendLayerByName(self.iface, "Buffers")
+            # create one if it doesn't exist
+            if not buffer_layer:
+                attribs = ['id', 'distance']
+                types = [QtCore.QVariant.String, QtCore.QVariant.Double]
+                buffer_layer = uf.createTempLayer('Buffers','POLYGON',layer.crs().postgisSrid(), attribs, types)
+                uf.loadTempLayer(buffer_layer)
+            # insert buffer polygons
+            geoms = []
+            values = []
+            for buffer in buffers.iteritems():
+                # each buffer has an id and a geometry
+                geoms.append(buffer[1])
+                # in the case of values, it expects a list of multiple values in each item - list of lists
+                values.append([buffer[0],cutoff_distance])
+            uf.insertTempFeatures(buffer_layer, geoms, values)
+            self.refreshCanvas(buffer_layer)
