@@ -1,0 +1,9 @@
+# ignore lock files (~)
+*.qgs~
+
+# ignore pycharm project folder
+.idea/**
+
+*.pyc
+
+GreenSpace/.idea/workspace.xml
