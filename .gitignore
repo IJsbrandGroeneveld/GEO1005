@@ -3,3 +3,5 @@
 
 # ignore pycharm project folder
 .idea/**
+
+GreenSpace/.idea/workspace.xml

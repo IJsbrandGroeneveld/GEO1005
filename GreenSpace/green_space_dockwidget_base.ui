@@ -2,6 +2,14 @@
 <ui version="4.0">
  <class>GreenSpaceDockWidgetBase</class>
  <widget class="QDockWidget" name="GreenSpaceDockWidgetBase">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>442</width>
+    <height>619</height>
+   </rect>
+  </property>
   <property name="sizePolicy">
    <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
     <horstretch>0</horstretch>
@@ -10,7 +18,7 @@
   </property>
   <property name="minimumSize">
    <size>
-    <width>368</width>
+    <width>218</width>
     <height>525</height>
    </size>
   </property>
@@ -41,7 +49,7 @@
       </property>
       <property name="minimumSize">
        <size>
-        <width>350</width>
+        <width>200</width>
         <height>0</height>
        </size>
       </property>
@@ -64,7 +72,7 @@
        <enum>QTabWidget::Rounded</enum>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>0</number>
       </property>
       <widget class="QWidget" name="settingsTab">
        <attribute name="title">
@@ -83,7 +91,11 @@
            <font>
             <weight>75</weight>
             <bold>true</bold>
+            <underline>true</underline>
            </font>
+          </property>
+          <property name="acceptDrops">
+           <bool>false</bool>
           </property>
           <property name="text">
            <string>Data preparation</string>
@@ -159,7 +171,7 @@
           <property name="sizeHint" stdset="0">
            <size>
             <width>400</width>
-            <height>50</height>
+            <height>25</height>
            </size>
           </property>
          </spacer>
@@ -195,6 +207,7 @@
            <font>
             <weight>75</weight>
             <bold>true</bold>
+            <underline>true</underline>
            </font>
           </property>
           <property name="text">
@@ -277,7 +290,7 @@
           <property name="sizeHint" stdset="0">
            <size>
             <width>400</width>
-            <height>50</height>
+            <height>25</height>
            </size>
           </property>
          </spacer>
@@ -352,6 +365,7 @@
            <font>
             <weight>75</weight>
             <bold>true</bold>
+            <underline>true</underline>
            </font>
           </property>
           <property name="text">
