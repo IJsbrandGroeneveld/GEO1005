@@ -87,7 +87,7 @@
         <x>0</x>
         <y>10</y>
         <width>394</width>
-        <height>233</height>
+        <height>304</height>
        </rect>
       </property>
       <layout class="QGridLayout" name="settingsGrid">
@@ -105,7 +105,27 @@
          <property name="spacing">
           <number>5</number>
          </property>
-         <item row="5" column="0" colspan="2">
+         <item row="12" column="1">
+          <widget class="QPushButton" name="makeIntersectionButton">
+           <property name="text">
+            <string>Intersection</string>
+           </property>
+          </widget>
+         </item>
+         <item row="11" column="1">
+          <widget class="QPushButton" name="bufferPushButton">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Create</string>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="0" colspan="2">
           <widget class="QLabel" name="bufferLabel">
            <property name="enabled">
             <bool>true</bool>
@@ -117,7 +137,7 @@
             </sizepolicy>
            </property>
            <property name="text">
-            <string>Step 3:  Create travel distance buffer:</string>
+            <string>Step 4:  Create travel distance buffer</string>
            </property>
           </widget>
          </item>
@@ -134,7 +154,7 @@
            </property>
           </widget>
          </item>
-         <item row="11" column="1">
+         <item row="14" column="1">
           <widget class="QPushButton" name="percentagePushButton">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -147,19 +167,26 @@
            </property>
           </widget>
          </item>
-         <item row="11" column="0">
+         <item row="14" column="0">
           <widget class="QLineEdit" name="percentageLineEdit"/>
          </item>
-         <item row="9" column="1">
-          <widget class="QPushButton" name="bufferPushButton">
+         <item row="15" column="0" colspan="2">
+          <widget class="QPushButton" name="startPushButton">
+           <property name="text">
+            <string>Calculate areas</string>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0" colspan="2">
+          <widget class="QComboBox" name="selectAttributeCombo">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
-           <property name="text">
-            <string>Create</string>
+           <property name="insertPolicy">
+            <enum>QComboBox::InsertAtBottom</enum>
            </property>
           </widget>
          </item>
@@ -175,33 +202,7 @@
             </sizepolicy>
            </property>
            <property name="text">
-            <string>Step 1: Select municipality layer:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="10" column="0" colspan="2">
-          <widget class="QLabel" name="percentagLabel">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>Step 4: Set minimum percentage of green:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="9" column="0">
-          <widget class="QLineEdit" name="bufferLineEdit"/>
-         </item>
-         <item row="12" column="0" colspan="2">
-          <widget class="QPushButton" name="startPushButton">
-           <property name="text">
-            <string>Calculate areas</string>
+            <string>Step 1: Select layer</string>
            </property>
           </widget>
          </item>
@@ -217,12 +218,47 @@
             </sizepolicy>
            </property>
            <property name="text">
-            <string>Step 2: Select municipality:</string>
+            <string>Step 2: Select attribute</string>
            </property>
           </widget>
          </item>
-         <item row="3" column="0" colspan="2">
-          <widget class="QComboBox" name="selectLayerCombo_2">
+         <item row="11" column="0">
+          <widget class="QLineEdit" name="bufferLineEdit"/>
+         </item>
+         <item row="13" column="0" colspan="2">
+          <widget class="QLabel" name="percentagLabel">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Step 5: Set minimum percentage of green</string>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="0">
+          <widget class="QLabel" name="boundaryLabel_3">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>Step 3: Select feature</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0" colspan="2">
+          <widget class="QComboBox" name="selectAttributeCombo_2">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -234,8 +270,8 @@
            </property>
           </widget>
          </item>
-         <item row="4" column="1">
-          <widget class="QPushButton" name="startPushButton_2">
+         <item row="6" column="1">
+          <widget class="QPushButton" name="selectAllFeatures">
            <property name="text">
             <string>Set municipality</string>
            </property>
@@ -245,8 +281,6 @@
        </item>
       </layout>
      </widget>
-     <zorder>gridLayoutWidget</zorder>
-     <zorder>boundaryLabel</zorder>
     </widget>
     <widget class="QWidget" name="Output">
      <attribute name="title">

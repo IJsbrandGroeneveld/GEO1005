@@ -58,7 +58,11 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
 
         # select area boundary combobox
         self.selectLayerCombo.activated.connect(self.setSelectedLayer)
+        self.selectAttributeCombo.activated.connect(self.setSelectedAttribute)
+        self.makeIntersectionButton.clicked.connect(self.calculateIntersection)
 
+        # make buffer layer
+        self.bufferPushButton.clicked.connect(self.calculateBuffer)
 
         # initialisation
         self.updateLayers()
@@ -89,3 +93,91 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         return layer
 
     # buffer functions
+    def getBufferCutoff(self):
+        cutoff = self.bufferLineEdit.text()
+        if uf.isNumeric(cutoff):
+            return uf.convertNumeric(cutoff)
+        else:
+            return 0
+
+    def calculateBuffer(self):
+        origins = self.getSelectedLayer().selectedFeatures()
+        layer = self.getSelectedLayer()
+        if origins > 0:
+            cutoff_distance = self.getBufferCutoff()
+            buffers = {}
+            for point in origins:
+                geom = point.geometry()
+                buffers[point.id()] = geom.buffer(cutoff_distance,11).asPolygon()
+            # store the buffer results in temporary layer called "Buffers"
+            buffer_layer = uf.getLegendLayerByName(self.iface, "Buffers")
+            # create one if it doesn't exist
+            if not buffer_layer:
+                attribs = ['id', 'distance']
+                types = [QtCore.QVariant.String, QtCore.QVariant.Double]
+                buffer_layer = uf.createTempLayer('Buffers','POLYGON',layer.crs().postgisSrid(), attribs, types)
+                uf.loadTempLayer(buffer_layer)
+            # insert buffer polygons
+            geoms = []
+            values = []
+            for buffer in buffers.iteritems():
+                # each buffer has an id and a geometry
+                geoms.append(buffer[1])
+                # in the case of values, it expects a list of multiple values in each item - list of lists
+                values.append([buffer[0],cutoff_distance])
+            uf.insertTempFeatures(buffer_layer, geoms, values)
+            self.refreshCanvas(buffer_layer)
+
+    def refreshCanvas(self, layer):
+        if self.canvas.isCachingEnabled():
+            layer.setCacheImage(None)
+        else:
+            self.canvas.refresh()
+
+    # attribute functions
+    def updateAttributes(self, layer):
+        self.selectAttributeCombo.clear()
+        if layer:
+            fields = uf.getFieldNames(layer)
+            self.selectAttributeCombo.addItems(fields)
+            # send list to the report list window
+            self.clearReport()
+            self.updateReport(fields)
+
+    def setSelectedAttribute(self):
+        field_name = self.selectAttributeCombo.currentText()
+        self.updateAttribute.emit(field_name)
+
+    def getSelectedAttribute(self):
+        field_name = self.selectAttributeCombo.currentText()
+        return field_name
+
+    # intersection function
+    def calculateIntersection(self):
+        # use the buffer to cut from another layer
+        cutter = uf.getLegendLayerByName(self.iface, "Buffers")
+        # use the selected layer for cutting
+        layer = uf.getLegendLayerByName(self.iface, "Terrain clipped green land cover")
+        if cutter.featureCount() > 0:
+            # get the intersections between the two layers
+            intersection = processing.runandload('qgis:intersection',layer,cutter,None)
+            intersection_layer = uf.getLegendLayerByName(self.iface, "Intersection")
+            # prepare results layer
+            save_path = "%s/dissolve_results.shp" % QgsProject.instance().homePath()
+            # dissolve grouping by origin id
+            dissolve = processing.runandload('qgis:dissolve',intersection_layer,False,'id',save_path)
+            dissolved_layer = uf.getLegendLayerByName(self.iface, "Dissolved")
+            # close intersections intermediary layer
+            QgsMapLayerRegistry.instance().removeMapLayers([intersection_layer.id()])
+
+            # add an 'area' field and calculate
+            # functiona can add more than one filed, therefore names and types are lists
+            uf.addFields(dissolved_layer, ["area"], [QtCore.QVariant.Double])
+            uf.updateField(dissolved_layer, "area","$area")
+            # add an 'total_area' field and calculate
+            uf.addFields(dissolved_layer, ["total_area"], [QtCore.QVariant.Double])
+            uf.updateField(dissolved_layer, "total_area","$area")
+            # add an 'percentage_green' field and calculate
+            uf.addFields(dissolved_layer, ["perc_green"], [QtCore.QVariant.Double])
+            uf.updateField(dissolved_layer, "perc_green","$area")
+
