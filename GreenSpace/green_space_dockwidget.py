@@ -112,6 +112,7 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
 
     def setSelectedAttribute(self):
         field_name = self.selectAttributeCombo.currentText()
+        self.updateFeature()
         self.updateAttribute.emit(field_name)
 
     def getSelectedAttribute(self):
@@ -123,10 +124,10 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.reportList.addItems(report)
 
     # get values from field
-    def updateFeature(self, layer):
+    def updateFeature(self):
         self.selectFeatureCombo.clear()
+        layer = self.getSelectedLayer()
         if layer:
-            layer = self.getSelectedLayer()
             attribute = self.getSelectedAttribute()
             features = uf.getFieldValues(layer, attribute, True, False)
             if features:
@@ -219,6 +220,6 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
     def clipLayer(self):
         inputlayer = uf.getLegendLayerByName(self.iface, "Buffer 300")
         cliplayer = uf.getLegendLayerByName(self.iface, "Terrain clipped green land cover")
-        processing.runalg("qgis:clip",inputlayer, cliplayer, "clipped_layer")
+        processing.runalg("qgis:clip",inputlayer, cliplayer, "clipped_layer.shp")
         pass
 
