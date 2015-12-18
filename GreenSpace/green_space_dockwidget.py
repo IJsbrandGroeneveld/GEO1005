@@ -49,6 +49,8 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         # http://qt-project.org/doc/qt-4.8/designer-using-a-ui-file.html
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
+        # initialize plugin directory
+        self.plugin_dir = os.path.dirname(__file__)
 
         # define globals
         self.iface = iface
@@ -63,7 +65,7 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
 
         # make buffer layer
         self.bufferPushButton.clicked.connect(self.calculateBuffer)
-        self.startPushButton.setIcon(QtGui.QIcon(':/icons/icon.png')
+        self.startPushButton.setIcon(QtGui.QIcon(self.plugin_dir + '/icons/icon.png'))
         # initialisation
         self.updateLayers()
 

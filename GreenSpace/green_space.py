@@ -173,7 +173,7 @@ class GreenSpace:
     def initGui(self):
         """Create the menu entries and toolbar icons inside the QGIS GUI."""
 
-        icon_path = ':/plugins/GreenSpace/icon.png'
+        icon_path = self.plugin_dir + '/icons/icon.png'
         self.add_action(
             icon_path,
             text=self.tr(u'Green Space Planning Support Tool'),
