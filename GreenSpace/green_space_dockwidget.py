@@ -63,7 +63,7 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
 
         # make buffer layer
         self.bufferPushButton.clicked.connect(self.calculateBuffer)
-
+        self.startPushButton.setIcon(QtGui.QIcon(':/icons/icon.png')
         # initialisation
         self.updateLayers()
 
