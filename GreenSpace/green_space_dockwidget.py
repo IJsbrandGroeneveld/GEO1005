@@ -38,7 +38,9 @@ FORM_CLASS, _ = uic.loadUiType(os.path.join(
 
 class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
 
-    closingPlugin = pyqtSignal()
+    closingPlugin = QtCore.pyqtSignal()
+    #custom signals
+    updateAttribute = QtCore.pyqtSignal(str)
 
     def __init__(self, iface, parent=None):
         """Constructor."""
@@ -59,10 +61,15 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         # select area boundary combobox
         self.selectLayerCombo.activated.connect(self.setSelectedLayer)
         self.selectAttributeCombo.activated.connect(self.setSelectedAttribute)
+        self.selectFeatureCombo.activated.connect(self.setSelectedFeature)
         self.makeIntersectionButton.clicked.connect(self.calculateIntersection)
 
         # make buffer layer
         self.bufferPushButton.clicked.connect(self.calculateBuffer)
+        self.clipButton.clicked.connect(self.clipLayer)
+
+        # add button icons
+        self.startPushButton.setIcon(QtGui.QIcon(':iconsjes/iconStart.png'))
 
         # initialisation
         self.updateLayers()
@@ -71,7 +78,7 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.closingPlugin.emit()
         event.accept()
 
-    # layer functions
+    # layer and attribute functions
     def updateLayers(self):
         layers = uf.getLegendLayers(self.iface, 'all', 'all')
         self.selectLayerCombo.clear()
@@ -79,18 +86,63 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
             layer_names = uf.getLayersListNames(layers)
             self.selectLayerCombo.addItems(layer_names)
             self.setSelectedLayer()
-        #else:
-         #   self.selectAttributeCombo.clear()
+        else:
+            self.selectAttributeCombo.clear()
+
 
     def setSelectedLayer(self):
         layer_name = self.selectLayerCombo.currentText()
         layer = uf.getLegendLayerByName(self.iface,layer_name)
-        #self.updateAttributes(layer)
+        self.updateAttributes(layer)
 
     def getSelectedLayer(self):
         layer_name = self.selectLayerCombo.currentText()
         layer = uf.getLegendLayerByName(self.iface,layer_name)
         return layer
+
+    def updateAttributes(self, layer):
+        self.selectAttributeCombo.clear()
+        if layer:
+            fields = uf.getFieldNames(layer)
+            if fields:
+                self.selectAttributeCombo.addItems(fields)
+                self.setSelectedAttribute()
+                # send list to the report list window
+                self.updateReport(fields)
+
+    def setSelectedAttribute(self):
+        field_name = self.selectAttributeCombo.currentText()
+        self.updateAttribute.emit(field_name)
+
+    def getSelectedAttribute(self):
+        field_name = self.selectAttributeCombo.currentText()
+        return field_name
+
+    def updateReport(self,report):
+        self.reportList.clear()
+        self.reportList.addItems(report)
+
+    # get values from field
+    def updateFeature(self, layer):
+        self.selectFeatureCombo.clear()
+        if layer:
+            layer = self.getSelectedLayer()
+            attribute = self.getSelectedAttribute()
+            features = uf.getFieldValues(layer, attribute, True, False)
+            if features:
+                self.selectFeatureCombo.addItems(features)
+                self.setSelectedFeatures()
+                # send list to the report list window
+                self.updateReport(features)
+
+
+    def setSelectedFeature(self):
+        feature = self.selectFeatureCombo.currentText()
+        self.updateAttribute.emit(feature)
+
+    def getSelectedFeature(self):
+        feature_name = self.selectFeatureCombo.currentText()
+        return feature_name
 
     # buffer functions
     def getBufferCutoff(self):
@@ -134,24 +186,6 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         else:
             self.canvas.refresh()
 
-    # attribute functions
-    def updateAttributes(self, layer):
-        self.selectAttributeCombo.clear()
-        if layer:
-            fields = uf.getFieldNames(layer)
-            self.selectAttributeCombo.addItems(fields)
-            # send list to the report list window
-            self.clearReport()
-            self.updateReport(fields)
-
-    def setSelectedAttribute(self):
-        field_name = self.selectAttributeCombo.currentText()
-        self.updateAttribute.emit(field_name)
-
-    def getSelectedAttribute(self):
-        field_name = self.selectAttributeCombo.currentText()
-        return field_name
-
     # intersection function
     def calculateIntersection(self):
         # use the buffer to cut from another layer
@@ -180,4 +214,11 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
             # add an 'percentage_green' field and calculate
             uf.addFields(dissolved_layer, ["perc_green"], [QtCore.QVariant.Double])
             uf.updateField(dissolved_layer, "perc_green","$area")
+
+    # clip layers function
+    def clipLayer(self):
+        inputlayer = uf.getLegendLayerByName(self.iface, "Buffer 300")
+        cliplayer = uf.getLegendLayerByName(self.iface, "Terrain clipped green land cover")
+        processing.runalg("qgis:clip",inputlayer, cliplayer, "clipped_layer")
+        pass
 

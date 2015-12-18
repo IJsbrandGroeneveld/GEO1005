@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>424</width>
-    <height>563</height>
+    <height>557</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -173,7 +173,13 @@
          <item row="15" column="0" colspan="2">
           <widget class="QPushButton" name="startPushButton">
            <property name="text">
-            <string>Calculate areas</string>
+            <string/>
+           </property>
+           <property name="iconSize">
+            <size>
+             <width>64</width>
+             <height>64</height>
+            </size>
            </property>
           </widget>
          </item>
@@ -258,7 +264,7 @@
           </widget>
          </item>
          <item row="5" column="0" colspan="2">
-          <widget class="QComboBox" name="selectAttributeCombo_2">
+          <widget class="QComboBox" name="selectFeatureCombo">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -271,7 +277,7 @@
           </widget>
          </item>
          <item row="6" column="1">
-          <widget class="QPushButton" name="selectAllFeatures">
+          <widget class="QPushButton" name="clipButton">
            <property name="text">
             <string>Set municipality</string>
            </property>
