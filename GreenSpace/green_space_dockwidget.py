@@ -71,6 +71,9 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         # add button icons
         self.startPushButton.setIcon(QtGui.QIcon(':iconsjes/iconStart.png'))
 
+        # add wanted green percentage
+        self.percentagePushButton.clicked.connect(self.setPercentage)
+
         # initialisation
         self.updateLayers()
 
@@ -121,7 +124,9 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
 
     def updateReport(self,report):
         self.reportList.clear()
-        self.reportList.addItems(report)
+        for repo in report:
+            re = str(repo)
+            self.reportList.addItems(re)
 
     # get values from field
     def updateFeature(self):
@@ -131,8 +136,10 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
             attribute = self.getSelectedAttribute()
             features = uf.getFieldValues(layer, attribute, True, False)
             if features:
-                self.selectFeatureCombo.addItems(features)
-                self.setSelectedFeatures()
+                for feature in features:
+                    fea = str(feature)
+                    self.selectFeatureCombo.addItems(fea)
+                self.setSelectedFeature()
                 # send list to the report list window
                 self.updateReport(features)
 
@@ -216,10 +223,29 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
             uf.addFields(dissolved_layer, ["perc_green"], [QtCore.QVariant.Double])
             uf.updateField(dissolved_layer, "perc_green","$area")
 
-    # clip layers function
-    def clipLayer(self):
-        inputlayer = uf.getLegendLayerByName(self.iface, "Buffer 300")
-        cliplayer = uf.getLegendLayerByName(self.iface, "Terrain clipped green land cover")
-        processing.runalg("qgis:clip",inputlayer, cliplayer, "clipped_layer.shp")
+    # make new layer from selected features
+    def newLayer(self):
+        features = [feat for feat in source_layer.selectedFeatures()]
+        fields = source_layer.dataProvider().fields().toList()
+        new_layer = QgsVectorLayer('POINT?crs=EPSG:28992', "Selection layer", "memory")
+        new_provider = new_layer.dataProvider()
+        new_provider.addAttributes(fields)
+        new_layer.updateFields()
+        new_provider.addFeatures(features)
+        #add new layer to legend
+        QgsMapLayerRegistry.instance().addMapLayer(new_layer)
         pass
 
+    # clip layers function
+    def clipLayer(self):
+        inputlayer = uf.getLegendLayerByName(self.iface, "line")
+        cliplayer = uf.getLegendLayerByName(self.iface, "poly")
+        processing.runandload("qgis:clip", inputlayer, cliplayer, "memory:clippedlayer")
+        layer = QgsMapLayerRegistry.instance().mapLayersByName("memory:clippedlayer")[0]
+
+    # set green percentage (add new field)
+    def setPercentage(self):
+        perc = self.percentageLineEdit.text()
+        dissolved_layer = uf.getLegendLayerByName(self.iface, "Dissolved")
+        uf.addFields(dissolved_layer, ["wanted_perc"], [QtCore.QVariant.Double])
+        uf.updateField(dissolved_layer, "wanted_perc", perc)
