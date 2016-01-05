@@ -57,6 +57,13 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.canvas = self.iface.mapCanvas()
 
         # set up GUI operation signals
+        self.iface.projectRead.connect(self.updateLayers)
+        self.iface.newProjectCreated.connect(self.updateLayers)
+        self.iface.legendInterface().itemRemoved.connect(self.updateLayers)
+        self.iface.legendInterface().itemAdded.connect(self.updateLayers)
+        self.selectLayerCombo.activated.connect(self.setSelectedLayer)
+        self.selectAttributeCombo.activated.connect(self.setSelectedAttribute)
+        self.selectFeatureCombo.activated.connect(self.setSelectedFeature)
 
         # select area boundary combobox
         self.selectLayerCombo.activated.connect(self.setSelectedLayer)
@@ -78,6 +85,15 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.updateLayers()
 
     def closeEvent(self, event):
+        # disconnect interface signals
+        try:
+            self.iface.projectRead.disconnect(self.updateLayers)
+            self.iface.newProjectCreated.disconnect(self.updateLayers)
+            self.iface.legendInterface().itemRemoved.disconnect(self.updateLayers)
+            self.iface.legendInterface().itemAdded.disconnect(self.updateLayers)
+        except:
+            pass
+
         self.closingPlugin.emit()
         event.accept()
 
@@ -134,7 +150,7 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         layer = self.getSelectedLayer()
         if layer:
             attribute = self.getSelectedAttribute()
-            features = uf.getFieldValues(layer, attribute, True, False)
+            features = uf.getFieldValues(layer, attribute, False, False)
             if features:
                 for feature in features:
                     fea = str(feature)
@@ -142,7 +158,6 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
                 self.setSelectedFeature()
                 # send list to the report list window
                 self.updateReport(features)
-
 
     def setSelectedFeature(self):
         feature = self.selectFeatureCombo.currentText()
@@ -238,8 +253,8 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
 
     # clip layers function
     def clipLayer(self):
-        inputlayer = uf.getLegendLayerByName(self.iface, "line")
-        cliplayer = uf.getLegendLayerByName(self.iface, "poly")
+        inputlayer = uf.getLegendLayerByName(self.iface, "poly")
+        cliplayer = uf.getLegendLayerByName(self.iface, "poly2")
         processing.runandload("qgis:clip", inputlayer, cliplayer, "memory:clippedlayer")
         layer = QgsMapLayerRegistry.instance().mapLayersByName("memory:clippedlayer")[0]
 
