@@ -73,13 +73,23 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
 
         # make buffer layer
         self.bufferPushButton.clicked.connect(self.calculateBuffer)
-        self.clipButton.clicked.connect(self.clipLayer)
+        self.clipButton.clicked.connect(self.newLayer)
 
         # add button icons
-        self.startPushButton.setIcon(QtGui.QIcon(':iconsjes/iconStart.png'))
+        Icon = QtGui.QIcon()
+        Icon.addPixmap(QtGui.QPixmap('iconStart.png'), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        self.startPushButton.setIcon(QtGui.QIcon('iconStart.png'))
 
         # add wanted green percentage
         self.percentagePushButton.clicked.connect(self.setPercentage)
+
+        """
+        #reporting
+        self.saveMapButton.clicked.connect(self.saveMap)
+        self.saveMapPathButton.clicked.connect(self.selectFile)
+        self.updateAttribute.connect(self.extractAttributeSummary)
+        self.saveStatisticsButton.clicked.connect(self.saveTable)
+        """
 
         # initialisation
         self.updateLayers()
@@ -141,8 +151,7 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
     def updateReport(self,report):
         self.reportList.clear()
         for repo in report:
-            re = str(repo)
-            self.reportList.addItems(re)
+            self.reportList.addItems(repo)
 
     # get values from field
     def updateFeature(self):
@@ -152,12 +161,14 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
             attribute = self.getSelectedAttribute()
             features = uf.getFieldValues(layer, attribute, False, False)
             if features:
-                for feature in features:
-                    fea = str(feature)
-                    self.selectFeatureCombo.addItems(fea)
+                fea = []
+                for feature in features[0]:
+                    fea.append(feature)
+                fea.sort()
+                self.selectFeatureCombo.addItems(fea)
                 self.setSelectedFeature()
                 # send list to the report list window
-                self.updateReport(features)
+                self.updateReport(fea)
 
     def setSelectedFeature(self):
         feature = self.selectFeatureCombo.currentText()
@@ -240,23 +251,22 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
 
     # make new layer from selected features
     def newLayer(self):
+        layer = self.getSelectedLayer()
+        uf.selectFeaturesByExpression(layer, self.selectFeatureCombo.currentText())
+        source_layer = uf.getLegendLayerByName(self.iface, "boundaries")
+        new_layer = QgsVectorLayer('POLYGON?crs=EPSG:28992', "Selected municipality", "memory")
+        provider = new_layer.dataProvider()
         features = [feat for feat in source_layer.selectedFeatures()]
-        fields = source_layer.dataProvider().fields().toList()
-        new_layer = QgsVectorLayer('POINT?crs=EPSG:28992', "Selection layer", "memory")
-        new_provider = new_layer.dataProvider()
-        new_provider.addAttributes(fields)
-        new_layer.updateFields()
-        new_provider.addFeatures(features)
-        #add new layer to legend
+        provider.addFeatures(features)
         QgsMapLayerRegistry.instance().addMapLayer(new_layer)
-        pass
 
     # clip layers function
     def clipLayer(self):
         inputlayer = uf.getLegendLayerByName(self.iface, "poly")
-        cliplayer = uf.getLegendLayerByName(self.iface, "poly2")
+        cliplayer = uf.getLegendLayerByName(self.iface, "boundaries")
         processing.runandload("qgis:clip", inputlayer, cliplayer, "memory:clippedlayer")
         layer = QgsMapLayerRegistry.instance().mapLayersByName("memory:clippedlayer")[0]
+        pass
 
     # set green percentage (add new field)
     def setPercentage(self):
@@ -264,3 +274,92 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         dissolved_layer = uf.getLegendLayerByName(self.iface, "Dissolved")
         uf.addFields(dissolved_layer, ["wanted_perc"], [QtCore.QVariant.Double])
         uf.updateField(dissolved_layer, "wanted_perc", perc)
+
+
+
+
+
+    # REPORT FUNCTIONS ---------------------------------------------------------------------------------------
+    def updateNumberFeatures(self):
+        layer = self.getSelectedLayer()
+        if layer:
+            count = layer.featureCount()
+            self.featureCounterEdit.setText(str(count))
+
+    # selecting a file for saving
+    def selectFile(self):
+        last_dir = uf.getLastDir("SDSS")
+        path = QtGui.QFileDialog.getSaveFileName(self, "Save map file", last_dir, "PNG (*.png)")
+        if path.strip()!="":
+            path = unicode(path)
+            uf.setLastDir(path,"SDSS")
+            self.saveMapPathEdit.setText(path)
+
+    # saving the current screen
+    def saveMap(self):
+        filename = self.saveMapPathEdit.text()
+        if filename != '':
+            self.canvas.saveAsImage(filename,None,"PNG")
+
+    def extractAttributeSummary(self, attribute):
+        # get summary of the attribute
+        layer = self.getSelectedLayer()
+        summary = []
+        # only use the first attribute in the list
+        for feature in layer.getFeatures():
+            summary.append((feature.id(), feature.attribute(attribute)))
+        # send this to the table
+        self.clearTable()
+        self.updateTable(summary)
+
+    # report window functions
+    def updateReport(self,report):
+        self.reportList.clear()
+        self.reportList.addItems(report)
+
+    def insertReport(self,item):
+        self.reportList.insertItem(0, item)
+
+    def clearReport(self):
+        self.reportList.clear()
+
+    # table window functions
+    def updateTable(self, values):
+        # takes a list of label / value pairs, can be tuples or lists. not dictionaries to control order
+        self.statisticsTable.setColumnCount(2)
+        self.statisticsTable.setHorizontalHeaderLabels(["Item","Value"])
+        self.statisticsTable.setRowCount(len(values))
+        for i, item in enumerate(values):
+            # i is the table row, items mus tbe added as QTableWidgetItems
+            self.statisticsTable.setItem(i,0,QtGui.QTableWidgetItem(str(item[0])))
+            self.statisticsTable.setItem(i,1,QtGui.QTableWidgetItem(str(item[1])))
+        self.statisticsTable.horizontalHeader().setResizeMode(0, QtGui.QHeaderView.ResizeToContents)
+        self.statisticsTable.horizontalHeader().setResizeMode(1, QtGui.QHeaderView.Stretch)
+        self.statisticsTable.resizeRowsToContents()
+
+    def clearTable(self):
+        self.statisticsTable.clear()
+
+    def saveTable(self):
+        path = QtGui.QFileDialog.getSaveFileName(self, 'Save File', '', 'CSV(*.csv)')
+        if path:
+            with open(unicode(path), 'wb') as stream:
+                # open csv file for writing
+                writer = csv.writer(stream)
+                # write header
+                header = []
+                for column in range(self.statisticsTable.columnCount()):
+                    item = self.statisticsTable.horizontalHeaderItem(column)
+                    header.append(unicode(item.text()).encode('utf8'))
+                writer.writerow(header)
+                # write data
+                for row in range(self.statisticsTable.rowCount()):
+                    rowdata = []
+                    for column in range(self.statisticsTable.columnCount()):
+                        item = self.statisticsTable.item(row, column)
+                        if item is not None:
+                            rowdata.append(
+                                unicode(item.text()).encode('utf8'))
+                        else:
+                            rowdata.append('')
+                    writer.writerow(rowdata)
