@@ -275,7 +275,7 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         inputlayer = uf.getLegendLayerByName(self.iface, "buildings")
         cliplayer = uf.getLegendLayerByName(self.iface, "selected boundaries")
         processing.runandload("qgis:clip", inputlayer, cliplayer, "memory:clippedlayer")
-        layer = QgsMapLayerRegistry.instance().mapLayersByName("memory:clippedlayer1")[0]
+        layer = QgsMapLayerRegistry.instance().mapLayersByName("memory:clippedlayer")[0]
         toc = self.iface.legendInterface()
         groups = toc.groups()
         groupIndex = groups.index(u'output')
@@ -288,6 +288,7 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         toc = self.iface.legendInterface()
         groups = toc.groups()
         groupIndex = groups.index(u'output')
+        # move layer to output folder
         toc.moveLayer(layer, groupIndex)
         toc.moveLayer(layer2, groupIndex)
         toc.setLayerVisible(layer2, True)
