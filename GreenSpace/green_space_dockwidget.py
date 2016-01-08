@@ -169,6 +169,10 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
                 self.updateReport(fea)
 
     def setSelectedFeature(self):
+        layer = self.getSelectedLayer()
+        att = str(self.selectAttributeCombo.currentText())
+        feat = str(self.selectFeatureCombo.currentText())
+        uf.selectFeaturesByExpression(layer, "\"Gemeentena\"='" + feat + "'")
         feature = self.selectFeatureCombo.currentText()
         self.updateAttribute.emit(feature)
 
@@ -185,8 +189,8 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
             return 0
 
     def calculateBuffer(self):
-        origins = self.getSelectedLayer().selectedFeatures()
-        layer = self.getSelectedLayer()
+        layer = uf.getLegendLayerByName(self.iface, "memory:clippedlayer")
+        origins = layer.getFeatures()
         if origins > 0:
             cutoff_distance = self.getBufferCutoff()
             buffers = {}
@@ -223,7 +227,7 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         # use the buffer to cut from another layer
         cutter = uf.getLegendLayerByName(self.iface, "Buffers")
         # use the selected layer for cutting
-        layer = uf.getLegendLayerByName(self.iface, "Terrain clipped green land cover")
+        layer = uf.getLegendLayerByName(self.iface, "memory:greenlayer")
         if cutter.featureCount() > 0:
             # get the intersections between the two layers
             intersection = processing.runandload('qgis:intersection',layer,cutter,None)
