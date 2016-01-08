@@ -76,9 +76,7 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.clipButton.clicked.connect(self.newLayer)
 
         # add button icons
-        Icon = QtGui.QIcon()
-        Icon.addPixmap(QtGui.QPixmap('iconStart.png'), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-        self.startPushButton.setIcon(QtGui.QIcon('iconStart.png'))
+        self.startPushButton.setIcon(QtGui.QIcon(':iconsjes/iconStart.PNG'))
 
         # add wanted green percentage
         self.percentagePushButton.clicked.connect(self.setPercentage)
@@ -252,21 +250,48 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
     # make new layer from selected features
     def newLayer(self):
         layer = self.getSelectedLayer()
-        uf.selectFeaturesByExpression(layer, self.selectFeatureCombo.currentText())
+        att = str(self.selectAttributeCombo.currentText())
+        feat = str(self.selectFeatureCombo.currentText())
+        uf.selectFeaturesByExpression(layer, "\"Gemeentena\"='" + feat + "'")
         source_layer = uf.getLegendLayerByName(self.iface, "boundaries")
-        new_layer = QgsVectorLayer('POLYGON?crs=EPSG:28992', "Selected municipality", "memory")
+        new_layer = QgsVectorLayer('POLYGON?crs=EPSG:28992', "selected boundaries", "memory")
         provider = new_layer.dataProvider()
         features = [feat for feat in source_layer.selectedFeatures()]
         provider.addFeatures(features)
+        #set layer style
         QgsMapLayerRegistry.instance().addMapLayer(new_layer)
+        uri = "C:\Development\Github repositories\GEO1005-Green-Space\GreenSpace\styles/boundaries.qml"
+        new_layer.loadNamedStyle(uri)
+        #put layer in group
+        toc = self.iface.legendInterface()
+        groups = toc.groups()
+        groupIndex = groups.index(u'output')
+        toc.moveLayer(new_layer, groupIndex)
+        toc.setLayerVisible(source_layer, False)
+        self.clipLayer()
 
     # clip layers function
     def clipLayer(self):
-        inputlayer = uf.getLegendLayerByName(self.iface, "poly")
-        cliplayer = uf.getLegendLayerByName(self.iface, "boundaries")
+        inputlayer = uf.getLegendLayerByName(self.iface, "buildings")
+        cliplayer = uf.getLegendLayerByName(self.iface, "selected boundaries")
         processing.runandload("qgis:clip", inputlayer, cliplayer, "memory:clippedlayer")
-        layer = QgsMapLayerRegistry.instance().mapLayersByName("memory:clippedlayer")[0]
-        pass
+        layer = QgsMapLayerRegistry.instance().mapLayersByName("memory:clippedlayer1")[0]
+        toc = self.iface.legendInterface()
+        groups = toc.groups()
+        groupIndex = groups.index(u'output')
+        toc.setLayerVisible(layer, True)
+        
+        inputlayer2 = uf.getLegendLayerByName(self.iface, "green")
+        cliplayer = uf.getLegendLayerByName(self.iface, "selected boundaries")
+        processing.runandload("qgis:clip", inputlayer2, cliplayer, "memory:greenlayer")
+        layer2 = QgsMapLayerRegistry.instance().mapLayersByName("memory:clippedlayer")[0]
+        toc = self.iface.legendInterface()
+        groups = toc.groups()
+        groupIndex = groups.index(u'output')
+        toc.moveLayer(layer, groupIndex)
+        toc.moveLayer(layer2, groupIndex)
+        toc.setLayerVisible(layer2, True)
+
 
     # set green percentage (add new field)
     def setPercentage(self):
