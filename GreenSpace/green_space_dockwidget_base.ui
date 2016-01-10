@@ -286,10 +286,6 @@
       <property name="text">
        <string/>
       </property>
-      <property name="icon">
-       <iconset resource="resources.qrc">
-        <normaloff>:/icons/iconstart.png</normaloff>:/icons/iconstart.png</iconset>
-      </property>
       <property name="iconSize">
        <size>
         <width>64</width>
@@ -352,8 +348,6 @@
    </widget>
   </widget>
  </widget>
- <resources>
-  <include location="resources.qrc"/>
- </resources>
+ <resources/>
  <connections/>
 </ui>
