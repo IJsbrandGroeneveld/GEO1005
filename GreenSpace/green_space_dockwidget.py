@@ -228,18 +228,18 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         # use the buffer to cut from another layer
         cutter = uf.getLegendLayerByName(self.iface, "Buffers")
         # use the selected layer for cutting
-        layer = uf.getLegendLayerByName(self.iface, "green")
+        layer = uf.getLegendLayerByName(self.iface, "memory:greenlayer")
         if cutter.featureCount() > 0:
             # get the intersections between the two layers
             intersection = processing.runandload('qgis:intersection',layer,cutter,None)
             intersection_layer = uf.getLegendLayerByName(self.iface, "Intersection")
             # prepare results layer
             save_path = "%s/dissolve_results.shp" % QgsProject.instance().homePath()
-            """# dissolve grouping by origin id
+            # dissolve grouping by origin id
             dissolve = processing.runandload('qgis:dissolve',intersection_layer,False,'id',save_path)
             dissolved_layer = uf.getLegendLayerByName(self.iface, "Dissolved")
             # close intersections intermediary layer
-            QgsMapLayerRegistry.instance().removeMapLayers([intersection_layer.id()])"""
+            """ QgsMapLayerRegistry.instance().removeMapLayers([intersection_layer.id()])"""
 
             # add an 'area' field and calculate
             # functiona can add more than one filed, therefore names and types are lists
@@ -311,7 +311,7 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         # move layer to output folder
         toc.moveLayer(layer, groupIndex)
         toc.moveLayer(layer2, groupIndex)
-        toc.setLayerVisible(layer2, False)
+        toc.setLayerVisible(layer2, True)
 
 
     # set green percentage (add new field)
