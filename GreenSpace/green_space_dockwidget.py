@@ -228,32 +228,45 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         # use the buffer to cut from another layer
         cutter = uf.getLegendLayerByName(self.iface, "Buffers")
         # use the selected layer for cutting
-        layer = uf.getLegendLayerByName(self.iface, "memory:greenlayer")
+        layer = uf.getLegendLayerByName(self.iface, "green")
         if cutter.featureCount() > 0:
             # get the intersections between the two layers
             intersection = processing.runandload('qgis:intersection',layer,cutter,None)
             intersection_layer = uf.getLegendLayerByName(self.iface, "Intersection")
             # prepare results layer
             save_path = "%s/dissolve_results.shp" % QgsProject.instance().homePath()
-            # dissolve grouping by origin id
+            """# dissolve grouping by origin id
             dissolve = processing.runandload('qgis:dissolve',intersection_layer,False,'id',save_path)
             dissolved_layer = uf.getLegendLayerByName(self.iface, "Dissolved")
             # close intersections intermediary layer
-            QgsMapLayerRegistry.instance().removeMapLayers([intersection_layer.id()])
+            QgsMapLayerRegistry.instance().removeMapLayers([intersection_layer.id()])"""
 
             # add an 'area' field and calculate
             # functiona can add more than one filed, therefore names and types are lists
             wanted_layer = uf.getLegendLayerByName(self.iface, "memory:clippedlayer")
+            dissolved_layer = uf.getLegendLayerByName(self.iface, "Intersection")
             uf.addFields(dissolved_layer,["green_area"], [QtCore.QVariant.Double])
             uf.updateField(dissolved_layer, "green_area","$area")
+            save_path = "%s/dissolve_results.shp" % QgsProject.instance().homePath()
+
+            shp = uf.getLegendLayerByName(self.iface, "memory:clippedlayer")
+            csv = uf.getLegendLayerByName(self.iface, "Intersection")
+            # Set properties for the join
+            shpField='typeGebouw'
+            csvField='type'
+            joinObject = QgsVectorJoinInfo()
+            joinObject.joinLayerId = csv.id()
+            joinObject.joinFieldName = csvField
+            joinObject.targetFieldName = shpField
+            shp.addJoin(joinObject)
             # add an 'total_area' field and calculate
             straal = float(self.bufferLineEdit.text())
             uf.addFields(wanted_layer, ["total_area"], [QtCore.QVariant.Double])
             uf.updateField(wanted_layer, "total_area"," 3.14159265359 * ((%d)^2)" % straal )
-            total = " 3.14159265359 * ((%d)^2)" % straal
+            total = float(" 3.14159265359 * ((%d)^2)" % straal)
             # add an 'percentage_green' field and calculate
             uf.addFields(wanted_layer, ["perc_green"], [QtCore.QVariant.Double])
-            uf.updateField(wanted_layer, "perc_green","%d * 100" % total)
+            uf.updateField(wanted_layer, "perc_green","%d / 100" % total)
 
     # make new layer from selected features
     def newLayer(self):
@@ -298,7 +311,7 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         # move layer to output folder
         toc.moveLayer(layer, groupIndex)
         toc.moveLayer(layer2, groupIndex)
-        toc.setLayerVisible(layer2, True)
+        toc.setLayerVisible(layer2, False)
 
 
     # set green percentage (add new field)
