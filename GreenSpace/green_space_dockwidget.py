@@ -76,7 +76,7 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.clipButton.clicked.connect(self.newLayer)
 
         # add button icons
-        self.startPushButton.setIcon(QtGui.QIcon(':iconsjes/iconStart.PNG'))
+        self.startPushButton.setIcon(QtGui.QIcon(':icons/iconstart.png'))
 
         # add wanted green percentage
         self.percentagePushButton.clicked.connect(self.setPercentage)
