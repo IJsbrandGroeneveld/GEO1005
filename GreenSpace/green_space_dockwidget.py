@@ -170,9 +170,10 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
 
     def setSelectedFeature(self):
         layer = self.getSelectedLayer()
+        layer.removeSelection()
         att = str(self.selectAttributeCombo.currentText())
         feat = str(self.selectFeatureCombo.currentText())
-        uf.selectFeaturesByExpression(layer, "\"Gemeentena\"='" + feat + "'")
+        uf.selectFeaturesByExpression(layer, " %s = '%s' " % (att, feat))
         feature = self.selectFeatureCombo.currentText()
         self.updateAttribute.emit(feature)
 
@@ -242,21 +243,23 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
 
             # add an 'area' field and calculate
             # functiona can add more than one filed, therefore names and types are lists
-            uf.addFields(dissolved_layer, ["area"], [QtCore.QVariant.Double])
-            uf.updateField(dissolved_layer, "area","$area")
+            wanted_layer = uf.getLegendLayerByName(self.iface, "memory:clippedlayer")
+            uf.addFields(dissolved_layer,["green_area"], [QtCore.QVariant.Double])
+            uf.updateField(dissolved_layer, "green_area","$area")
             # add an 'total_area' field and calculate
-            uf.addFields(dissolved_layer, ["total_area"], [QtCore.QVariant.Double])
-            uf.updateField(dissolved_layer, "total_area","$area")
+            straal = float(self.bufferLineEdit.text())
+            uf.addFields(wanted_layer, ["total_area"], [QtCore.QVariant.Double])
+            uf.updateField(wanted_layer, "total_area"," 3.14159265359 * ((%d)^2)" % straal )
+            total = " 3.14159265359 * ((%d)^2)" % straal
             # add an 'percentage_green' field and calculate
-            uf.addFields(dissolved_layer, ["perc_green"], [QtCore.QVariant.Double])
-            uf.updateField(dissolved_layer, "perc_green","$area")
+            uf.addFields(wanted_layer, ["perc_green"], [QtCore.QVariant.Double])
+            uf.updateField(wanted_layer, "perc_green","%d * 100" % total)
 
     # make new layer from selected features
     def newLayer(self):
         layer = self.getSelectedLayer()
         att = str(self.selectAttributeCombo.currentText())
         feat = str(self.selectFeatureCombo.currentText())
-        uf.selectFeaturesByExpression(layer, "\"Gemeentena\"='" + feat + "'")
         source_layer = uf.getLegendLayerByName(self.iface, "boundaries")
         new_layer = QgsVectorLayer('POLYGON?crs=EPSG:28992', "selected boundaries", "memory")
         provider = new_layer.dataProvider()
@@ -288,7 +291,7 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         inputlayer2 = uf.getLegendLayerByName(self.iface, "green")
         cliplayer = uf.getLegendLayerByName(self.iface, "selected boundaries")
         processing.runandload("qgis:clip", inputlayer2, cliplayer, "memory:greenlayer")
-        layer2 = QgsMapLayerRegistry.instance().mapLayersByName("memory:clippedlayer")[0]
+        layer2 = QgsMapLayerRegistry.instance().mapLayersByName("memory:greenlayer")[0]
         toc = self.iface.legendInterface()
         groups = toc.groups()
         groupIndex = groups.index(u'output')
@@ -300,10 +303,10 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
 
     # set green percentage (add new field)
     def setPercentage(self):
-        perc = self.percentageLineEdit.text()
-        dissolved_layer = uf.getLegendLayerByName(self.iface, "Dissolved")
-        uf.addFields(dissolved_layer, ["wanted_perc"], [QtCore.QVariant.Double])
-        uf.updateField(dissolved_layer, "wanted_perc", perc)
+        perc = int(self.percentageLineEdit.text())
+        wanted_layer = uf.getLegendLayerByName(self.iface, "memory:clippedlayer")
+        uf.addFields(wanted_layer, ["wanted_perc"], [QtCore.QVariant.Double])
+        uf.updateField(wanted_layer, "wanted_perc", "%d" % perc)
 
 
 
