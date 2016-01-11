@@ -228,7 +228,7 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         # use the buffer to cut from another layer
         cutter = uf.getLegendLayerByName(self.iface, "Buffers")
         # use the selected layer for cutting
-        layer = uf.getLegendLayerByName(self.iface, "memory:greenlayer")
+        layer = uf.getLegendLayerByName(self.iface, "green")
         if cutter.featureCount() > 0:
             # get the intersections between the two layers
             intersection = processing.runandload('qgis:intersection',layer,cutter,None)
@@ -243,30 +243,41 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
 
             # add an 'area' field and calculate
             # functiona can add more than one filed, therefore names and types are lists
-            wanted_layer = uf.getLegendLayerByName(self.iface, "memory:clippedlayer")
-            dissolved_layer = uf.getLegendLayerByName(self.iface, "Intersection")
+            wanted_layer = uf.getLegendLayerByName(self.iface, "Buffers")
+            dissolved_layer = uf.getLegendLayerByName(self.iface, "Dissolved")
             uf.addFields(dissolved_layer,["green_area"], [QtCore.QVariant.Double])
             uf.updateField(dissolved_layer, "green_area","$area")
+            dissolved_layer.updateFields()
             save_path = "%s/dissolve_results.shp" % QgsProject.instance().homePath()
 
-            shp = uf.getLegendLayerByName(self.iface, "memory:clippedlayer")
-            csv = uf.getLegendLayerByName(self.iface, "Intersection")
+            shp = uf.getLegendLayerByName(self.iface, "Buffers")
+            csv = uf.getLegendLayerByName(self.iface, "Dissolved")
             # Set properties for the join
-            shpField='typeGebouw'
-            csvField='type'
+            shpField='id'
+            csvField='id'
             joinObject = QgsVectorJoinInfo()
             joinObject.joinLayerId = csv.id()
             joinObject.joinFieldName = csvField
             joinObject.targetFieldName = shpField
+            joinObject.memoryCache = True
             shp.addJoin(joinObject)
             # add an 'total_area' field and calculate
             straal = float(self.bufferLineEdit.text())
             uf.addFields(wanted_layer, ["total_area"], [QtCore.QVariant.Double])
             uf.updateField(wanted_layer, "total_area"," 3.14159265359 * ((%d)^2)" % straal )
-            total = float(" 3.14159265359 * ((%d)^2)" % straal)
             # add an 'percentage_green' field and calculate
-            uf.addFields(wanted_layer, ["perc_green"], [QtCore.QVariant.Double])
-            uf.updateField(wanted_layer, "perc_green","%d / 100" % total)
+            uf.addFields(wanted_layer, ["green_perc"], [QtCore.QVariant.Double])
+            uf.updateField(wanted_layer, "green_perc","(%s /%s)* 100" % ('Dissolved_green_area', 'total_area'))
+            layer1 = QgsMapLayerRegistry.instance().mapLayersByName("Buffers")[0]
+            layer2 = QgsMapLayerRegistry.instance().mapLayersByName("Intersection")[0]
+            layer3 = QgsMapLayerRegistry.instance().mapLayersByName("Dissolved")[0]
+            toc = self.iface.legendInterface()
+            groups = toc.groups()
+            groupIndex = groups.index(u'output')
+            # move layer to output folder
+            toc.moveLayer(layer1, groupIndex)
+            toc.moveLayer(layer2, groupIndex)
+            toc.moveLayer(layer3, groupIndex)
 
     # make new layer from selected features
     def newLayer(self):
@@ -316,10 +327,25 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
 
     # set green percentage (add new field)
     def setPercentage(self):
+        layer1 = QgsMapLayerRegistry.instance().mapLayersByName("Buffers")[0]
+        layer2 = QgsMapLayerRegistry.instance().mapLayersByName("Intersection")[0]
+        layer3 = QgsMapLayerRegistry.instance().mapLayersByName("Dissolved")[0]
+        toc = self.iface.legendInterface()
+        toc.setLayerVisible(layer1, False)
+        toc.setLayerVisible(layer2, False)
+        toc.setLayerVisible(layer3, False)
+        layer4 = QgsMapLayerRegistry.instance().mapLayersByName("memory:greenlayer")[0]
+        layer5 = QgsMapLayerRegistry.instance().mapLayersByName("memory:clippedlayer")[0]
+        toc = self.iface.legendInterface()
+        toc.setLayerVisible(layer4, False)
+        toc.setLayerVisible(layer5, False)
         perc = int(self.percentageLineEdit.text())
-        wanted_layer = uf.getLegendLayerByName(self.iface, "memory:clippedlayer")
+        wanted_layer = uf.getLegendLayerByName(self.iface, "Buffers")
         uf.addFields(wanted_layer, ["wanted_perc"], [QtCore.QVariant.Double])
         uf.updateField(wanted_layer, "wanted_perc", "%d" % perc)
+        input_layer = uf.getLegendLayerByName(self.iface, "Buffers")
+        output_layer = QgsVectorLayer('POINTS?crs=EPSG:28992', "outputfile", "memory")
+        processing.runalg('qgis:polygoncentroids', input_layer, output_layer)
 
 
 
