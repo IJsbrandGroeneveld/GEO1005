@@ -43,7 +43,7 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
     updateAttribute = QtCore.pyqtSignal(str)
 
     # initialize plugin directory
-    self.plugin_dir = os.path.dirname(__file__)
+    plugin_dir = os.path.dirname(__file__)
 
     def __init__(self, iface, parent=None):
         """Constructor."""
@@ -350,25 +350,29 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         output_layer = QgsVectorLayer('POINTS?crs=EPSG:28992', "outputfile", "memory")
         processing.runalg('qgis:polygoncentroids', input_layer, output_layer)
         # apply layer style
-        file_path = self.plugin_dir + '/styles/output.qml'
-        f = open(file_path, 'r+')
-        for line in f:
-            if line == "      <rule filter="green_perc >= 0.089780 AND green_perc &lt;= 10.000000" key="{9825544c-a679-41ac-af7c-10012f165b6f}" symbol="0" label="Onvoldoende 0.1 - 10.0 "/>":
-                line.replace(
-                    "      <rule filter="green_perc >= 0.089780 AND green_perc &lt;= 10.000000" key="{9825544c-a679-41ac-af7c-10012f165b6f}" symbol="0" label="Onvoldoende 0.1 - 10.0 "/>",
-                    "      <rule filter="green_perc >= 0.0 AND green_perc &lt;= perc" key="{9825544c-a679-41ac-af7c-10012f165b6f}" symbol="0" label="Onvoldoende " + "0 - " + str(perc) "/>"
-                )
-            if line == "      <rule filter="green_perc > 10.000000 AND green_perc &lt;= 20.000000" key="{cddc3e79-9186-4b56-92dc-f107f0f7bf0c}" symbol="1" label="Matig 10.0 - 20.0 "/>":
-                line.replace(
-                    "      <rule filter="green_perc > 10.000000 AND green_perc &lt;= 20.000000" key="{cddc3e79-9186-4b56-92dc-f107f0f7bf0c}" symbol="1" label="Matig 10.0 - 20.0 "/>",
-                    "      <rule filter="green_perc >= perc-5 AND green_perc &lt;= perc+5" key="{9825544c-a679-41ac-af7c-10012f165b6f}" symbol="0" label="Matig " + str(perc-5) + str(perc) + str(perc+5) "/>"
-                )
-            if line == "      <rule filter="green_perc > 10.000000 AND green_perc &lt;= 20.000000" key="{1e6b826e-d631-4fa1-8e6f-b23733e83b61}" symbol="2" label="Goed 10.0 - 20.0 "/>":
-                line.replace(
-                    "      <rule filter="green_perc > 10.000000 AND green_perc &lt;= 20.000000" key="{1e6b826e-d631-4fa1-8e6f-b23733e83b61}" symbol="2" label="Goed 10.0 - 20.0 "/>",
-                    "      <rule filter="green_perc > perc + 5 " key="{1e6b826e-d631-4fa1-8e6f-b23733e83b61}" symbol="2" label="Goed > " + str(perc+5) "/>"
-                )
-        f.close()
+
+
+        # opens the qml stylefile and edits the rules
+        file_path = os.path.normpath("C:/Users/robbr/Desktop/outputfiles.qml")
+        perc = 5
+        replacements = {
+            """      <rule filter="green_perc >= 0.089780 AND green_perc &lt;= 10.000000" key="{9825544c-a679-41ac-af7c-10012f165b6f}" symbol="0" label="Onvoldoende 0.1 - 10.0 "/>""":
+            """      <rule filter="green_perc >= 0.0 AND green_perc &lt;= """ + str(perc - 2.5) + '\"' + """ key="{9825544c-a679-41ac-af7c-10012f165b6f}" symbol="0" label="Onvoldoende" "/>""",
+            """      <rule filter="green_perc > 10.000000 AND green_perc &lt;= 20.000000" key="{cddc3e79-9186-4b56-92dc-f107f0f7bf0c}" symbol="1" label="Matig 10.0 - 20.0 "/>""":
+            """      <rule filter="green_perc >= """ + str(perc-2.5) + """ AND green_perc &lt;= """ + str(perc+2.5) + "\"" + """ key="{9825544c-a679-41ac-af7c-10012f165b6f}" symbol="0" label="Matig" "/>""",
+            """      <rule filter="green_perc > 10.000000 AND green_perc &lt;= 20.000000" key="{1e6b826e-d631-4fa1-8e6f-b23733e83b61}" symbol="2" label="Goed 10.0 - 20.0 "/>""":
+            """      <rule filter="green_perc > """ + str(perc + 2.5) + '\"' + """ key="{1e6b826e-d631-4fa1-8e6f-b23733e83b61}" symbol="2" label="Goed" "/>"""
+            }
+        lines = []
+        with open(file_path) as infile:
+            for line in infile:
+                for src, target in replacements.iteritems():
+                    line = line.replace(src, target)
+                lines.append(line)
+        with open(file_path, 'w') as outfile:
+            for line in lines:
+                outfile.write(line)
+
         output_layer.loadNamedStyle(file_path)
 
 
