@@ -87,13 +87,13 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         # add wanted green percentage
         self.percentagePushButton.clicked.connect(self.setPercentage)
 
-
+        """
         #reporting
         self.saveMapButton.clicked.connect(self.saveMap)
         self.saveMapPathButton.clicked.connect(self.selectFile)
         self.updateAttribute.connect(self.extractAttributeSummary)
         self.saveStatisticsButton.clicked.connect(self.saveTable)
-
+        """
 
         # initialisation
         self.updateLayers()
@@ -225,11 +225,6 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
                 values.append([buffer[0],cutoff_distance])
             uf.insertTempFeatures(buffer_layer, geoms, values)
             self.refreshCanvas(buffer_layer)
-            layer = QgsMapLayerRegistry.instance().mapLayersByName("Buffers")[0]
-            toc = self.iface.legendInterface()
-            groups = toc.groups()
-            groupIndex = groups.index(u'output')
-            toc.moveLayer(layer, groupIndex)
 
     def refreshCanvas(self, layer):
         if self.canvas.isCachingEnabled():
@@ -287,10 +282,9 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         layer3 = QgsMapLayerRegistry.instance().mapLayersByName("Dissolved")[0]
         toc = self.iface.legendInterface()
         groups = toc.groups()
-        groupIndex2 = groups.index(u'output')
-        groupIndex = groups.index(u'working files')
+        groupIndex = groups.index(u'output')
         # move layer to output folder
-        toc.moveLayer(layer1, groupIndex2)
+        toc.moveLayer(layer1, groupIndex)
         toc.moveLayer(layer2, groupIndex)
         toc.moveLayer(layer3, groupIndex)
 
@@ -306,12 +300,12 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         provider.addFeatures(features)
         #set layer style
         QgsMapLayerRegistry.instance().addMapLayer(new_layer)
-        uri = os.path.normpath(self.plugin_path + "/styles/boundaries.qml")
+        uri = "C:\Development\Github repositories\GEO1005-Green-Space\GreenSpace\styles/boundaries.qml"
         new_layer.loadNamedStyle(uri)
         #put layer in group
         toc = self.iface.legendInterface()
         groups = toc.groups()
-        groupIndex = groups.index(u'working files')
+        groupIndex = groups.index(u'output')
         toc.moveLayer(new_layer, groupIndex)
         toc.setLayerVisible(source_layer, False)
         self.clipLayer()
@@ -324,7 +318,7 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         layer = QgsMapLayerRegistry.instance().mapLayersByName("memory:clippedlayer")[0]
         toc = self.iface.legendInterface()
         groups = toc.groups()
-        groupIndex = groups.index(u'working files')
+        groupIndex = groups.index(u'output')
         toc.setLayerVisible(layer, True)
         inputlayer2 = uf.getLegendLayerByName(self.iface, "green")
         cliplayer = uf.getLegendLayerByName(self.iface, "selected boundaries")
@@ -332,7 +326,7 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         layer2 = QgsMapLayerRegistry.instance().mapLayersByName("memory:greenlayer")[0]
         toc = self.iface.legendInterface()
         groups = toc.groups()
-        groupIndex = groups.index(u'working files')
+        groupIndex = groups.index(u'output')
         # move layer to output folder
         toc.moveLayer(layer, groupIndex)
         toc.moveLayer(layer2, groupIndex)
@@ -345,6 +339,18 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
 
     # set green percentage (add new field)
     def setPercentage(self):
+        layer1 = QgsMapLayerRegistry.instance().mapLayersByName("Buffers")[0]
+        layer2 = QgsMapLayerRegistry.instance().mapLayersByName("Intersection")[0]
+        layer3 = QgsMapLayerRegistry.instance().mapLayersByName("Dissolved")[0]
+        toc = self.iface.legendInterface()
+        toc.setLayerVisible(layer1, False)
+        toc.setLayerVisible(layer2, False)
+        toc.setLayerVisible(layer3, False)
+        layer4 = QgsMapLayerRegistry.instance().mapLayersByName("memory:greenlayer")[0]
+        layer5 = QgsMapLayerRegistry.instance().mapLayersByName("memory:clippedlayer")[0]
+        toc = self.iface.legendInterface()
+        toc.setLayerVisible(layer4, False)
+        toc.setLayerVisible(layer5, False)
         perc = int(self.percentageLineEdit.text())
         wanted_layer = uf.getLegendLayerByName(self.iface, "Buffers")
         uf.addFields(wanted_layer, ["wanted_perc"], [QtCore.QVariant.Double])
@@ -354,18 +360,7 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         processing.runalg('qgis:polygoncentroids', input_layer, output_layer)
 
     def makeItGreen(self):
-        layer1 = QgsMapLayerRegistry.instance().mapLayersByName("Buffers")[0]
-        layer2 = QgsMapLayerRegistry.instance().mapLayersByName("Intersection")[0]
-        layer3 = QgsMapLayerRegistry.instance().mapLayersByName("Dissolved")[0]
-        toc = self.iface.legendInterface()
-        toc.setLayerVisible(layer1, True)
-        toc.setLayerVisible(layer2, False)
-        toc.setLayerVisible(layer3, False)
-        layer4 = QgsMapLayerRegistry.instance().mapLayersByName("memory:greenlayer")[0]
-        layer5 = QgsMapLayerRegistry.instance().mapLayersByName("memory:clippedlayer")[0]
-        toc = self.iface.legendInterface()
-        toc.setLayerVisible(layer4, False)
-        toc.setLayerVisible(layer5, False)
+
         # apply layer style
         # opens the qml stylefile and edits the rules
         file_path = os.path.normpath(self.plugin_path + "/styles/outputfiles.qml")
@@ -390,16 +385,6 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
                 outfile.write(line)
         output_layer = uf.getLegendLayerByName(self.iface, "Buffers")
         output_layer.loadNamedStyle(file_path2)
-        layertje = uf.getLegendLayerByName(self.iface, "brtachtergrondkaart")
-        toc = self.iface.legendInterface()
-        toc.setLayerVisible(layertje, True)
-        toc = self.iface.legendInterface()
-        groups = toc.groups()
-        groupIndex12 = groups.index(u'working files')
-        groupIndex13 = groups.index(u'input')
-        toc.setGroupExpanded(groupIndex12, True)
-        toc.setGroupExpanded(groupIndex13, True)
-
 
 
 
@@ -407,48 +392,36 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
 
     # REPORT FUNCTIONS ---------------------------------------------------------------------------------------
     def updateNumberFeatures(self):
-        try:
-            layer = uf.getLegendLayerByName(self.iface, "Buffers")
-            if layer:
-                count = layer.featureCount()
-                self.featureCounterEdit.setText(str(count))
-        except:
-            pass
+        layer = self.getSelectedLayer()
+        if layer:
+            count = layer.featureCount()
+            self.featureCounterEdit.setText(str(count))
 
     # selecting a file for saving
     def selectFile(self):
-        try:
-            last_dir = uf.getLastDir("SDSS")
-            path = QtGui.QFileDialog.getSaveFileName(self, "Save map file", last_dir, "PNG (*.png)")
-            if path.strip()!="":
-                path = unicode(path)
-                uf.setLastDir(path,"SDSS")
-                self.saveMapPathEdit.setText(path)
-        except:
-            pass
+        last_dir = uf.getLastDir("SDSS")
+        path = QtGui.QFileDialog.getSaveFileName(self, "Save map file", last_dir, "PNG (*.png)")
+        if path.strip()!="":
+            path = unicode(path)
+            uf.setLastDir(path,"SDSS")
+            self.saveMapPathEdit.setText(path)
 
     # saving the current screen
     def saveMap(self):
-        try:
-            filename = self.saveMapPathEdit.text()
-            if filename != '':
-                self.canvas.saveAsImage(filename,None,"PNG")
-        except:
-            pass
+        filename = self.saveMapPathEdit.text()
+        if filename != '':
+            self.canvas.saveAsImage(filename,None,"PNG")
 
     def extractAttributeSummary(self, attribute):
-        try:
-            # get summary of the attribute
-            layer = uf.getLegendLayerByName(self.iface, "Buffers")
-            summary = []
-            # only use the first attribute in the list
-            for feature in layer.getFeatures():
-                summary.append((feature.id(), feature.attribute(attribute)))
-            # send this to the table
-            self.clearTable()
-            self.updateTable(summary)
-        except:
-            pass
+        # get summary of the attribute
+        layer = self.getSelectedLayer()
+        summary = []
+        # only use the first attribute in the list
+        for feature in layer.getFeatures():
+            summary.append((feature.id(), feature.attribute(attribute)))
+        # send this to the table
+        self.clearTable()
+        self.updateTable(summary)
 
     # report window functions
     def updateReport(self,report):
@@ -463,47 +436,41 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
 
     # table window functions
     def updateTable(self, values):
-        try:
-            # takes a list of label / value pairs, can be tuples or lists. not dictionaries to control order
-            self.statisticsTable.setColumnCount(2)
-            self.statisticsTable.setHorizontalHeaderLabels(["Item","Value"])
-            self.statisticsTable.setRowCount(len(values))
-            for i, item in enumerate(values):
-                # i is the table row, items mus tbe added as QTableWidgetItems
-                self.statisticsTable.setItem(i,0,QtGui.QTableWidgetItem(str(item[0])))
-                self.statisticsTable.setItem(i,1,QtGui.QTableWidgetItem(str(item[1])))
-            self.statisticsTable.horizontalHeader().setResizeMode(0, QtGui.QHeaderView.ResizeToContents)
-            self.statisticsTable.horizontalHeader().setResizeMode(1, QtGui.QHeaderView.Stretch)
-            self.statisticsTable.resizeRowsToContents()
-        except:
-            pass
+        # takes a list of label / value pairs, can be tuples or lists. not dictionaries to control order
+        self.statisticsTable.setColumnCount(2)
+        self.statisticsTable.setHorizontalHeaderLabels(["Item","Value"])
+        self.statisticsTable.setRowCount(len(values))
+        for i, item in enumerate(values):
+            # i is the table row, items mus tbe added as QTableWidgetItems
+            self.statisticsTable.setItem(i,0,QtGui.QTableWidgetItem(str(item[0])))
+            self.statisticsTable.setItem(i,1,QtGui.QTableWidgetItem(str(item[1])))
+        self.statisticsTable.horizontalHeader().setResizeMode(0, QtGui.QHeaderView.ResizeToContents)
+        self.statisticsTable.horizontalHeader().setResizeMode(1, QtGui.QHeaderView.Stretch)
+        self.statisticsTable.resizeRowsToContents()
 
     def clearTable(self):
         self.statisticsTable.clear()
 
     def saveTable(self):
-        try:
-            path = QtGui.QFileDialog.getSaveFileName(self, 'Save File', '', 'CSV(*.csv)')
-            if path:
-                with open(unicode(path), 'wb') as stream:
-                    # open csv file for writing
-                    writer = csv.writer(stream)
-                    # write header
-                    header = []
+        path = QtGui.QFileDialog.getSaveFileName(self, 'Save File', '', 'CSV(*.csv)')
+        if path:
+            with open(unicode(path), 'wb') as stream:
+                # open csv file for writing
+                writer = csv.writer(stream)
+                # write header
+                header = []
+                for column in range(self.statisticsTable.columnCount()):
+                    item = self.statisticsTable.horizontalHeaderItem(column)
+                    header.append(unicode(item.text()).encode('utf8'))
+                writer.writerow(header)
+                # write data
+                for row in range(self.statisticsTable.rowCount()):
+                    rowdata = []
                     for column in range(self.statisticsTable.columnCount()):
-                        item = self.statisticsTable.horizontalHeaderItem(column)
-                        header.append(unicode(item.text()).encode('utf8'))
-                    writer.writerow(header)
-                    # write data
-                    for row in range(self.statisticsTable.rowCount()):
-                        rowdata = []
-                        for column in range(self.statisticsTable.columnCount()):
-                            item = self.statisticsTable.item(row, column)
-                            if item is not None:
-                                rowdata.append(
-                                    unicode(item.text()).encode('utf8'))
-                            else:
-                                rowdata.append('')
-                        writer.writerow(rowdata)
-        except:
-            pass
+                        item = self.statisticsTable.item(row, column)
+                        if item is not None:
+                            rowdata.append(
+                                unicode(item.text()).encode('utf8'))
+                        else:
+                            rowdata.append('')
+                    writer.writerow(rowdata)
