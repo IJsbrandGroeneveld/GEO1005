@@ -393,6 +393,13 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         layertje = uf.getLegendLayerByName(self.iface, "brtachtergrondkaart")
         toc = self.iface.legendInterface()
         toc.setLayerVisible(layertje, True)
+        toc = self.iface.legendInterface()
+        groups = toc.groups()
+        groupIndex12 = groups.index(u'working files')
+        groupIndex13 = groups.index(u'input')
+        toc.setGroupExpanded(groupIndex12, True)
+        toc.setGroupExpanded(groupIndex13, True)
+
 
 
 
@@ -401,7 +408,7 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
     # REPORT FUNCTIONS ---------------------------------------------------------------------------------------
     def updateNumberFeatures(self):
         try:
-            layer = self.getSelectedLayer()
+            layer = uf.getLegendLayerByName(self.iface, "Buffers")
             if layer:
                 count = layer.featureCount()
                 self.featureCounterEdit.setText(str(count))
@@ -428,10 +435,11 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
                 self.canvas.saveAsImage(filename,None,"PNG")
         except:
             pass
+
     def extractAttributeSummary(self, attribute):
         try:
             # get summary of the attribute
-            layer = self.getSelectedLayer()
+            layer = uf.getLegendLayerByName(self.iface, "Buffers")
             summary = []
             # only use the first attribute in the list
             for feature in layer.getFeatures():
