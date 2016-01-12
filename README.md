@@ -8,11 +8,7 @@ Green Space directory:
   Copy this folder over to the plugins folder of QGIS to run the plugin.
   
 Sample_files directory:
-  This folder contains files that are linked to the sample_project of QGIS, see the sample_project directory. 
-  With these files you can run the demo without having to import any layer into QGIS manually.
-
-sample_project directory:
-  Open this project file in QGIS to automatically load the required layers and start testing the plugin.
-
+  This folder contains files that are linked to the sample QGIS-project inside. 
+  By opening this project file you can run the demo without having to import any layer into QGIS manually.
 
 
