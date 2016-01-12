@@ -349,9 +349,6 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         wanted_layer = uf.getLegendLayerByName(self.iface, "Buffers")
         uf.addFields(wanted_layer, ["wanted_perc"], [QtCore.QVariant.Double])
         uf.updateField(wanted_layer, "wanted_perc", "%d" % perc)
-        input_layer = uf.getLegendLayerByName(self.iface, "Buffers")
-        output_layer = QgsVectorLayer('POINTS?crs=EPSG:28992', "outputfile", "memory")
-        processing.runalg('qgis:polygoncentroids', input_layer, output_layer)
 
     def makeItGreen(self):
         layer1 = QgsMapLayerRegistry.instance().mapLayersByName("Buffers")[0]
