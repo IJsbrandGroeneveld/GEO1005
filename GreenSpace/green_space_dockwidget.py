@@ -42,8 +42,6 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
     #custom signals
     updateAttribute = QtCore.pyqtSignal(str)
 
-    # initialize plugin directory
-    plugin_dir = os.path.dirname(__file__)
 
     def __init__(self, iface, parent=None):
         """Constructor."""
@@ -55,9 +53,14 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         # #widgets-and-dialogs-with-auto-connect
         self.setupUi(self)
 
+
+
         # define globals
         self.iface = iface
         self.canvas = self.iface.mapCanvas()
+        # initialize plugin directory
+        self.plugin_path = os.path.dirname(__file__)
+
 
         # set up GUI operation signals
         self.iface.projectRead.connect(self.updateLayers)
@@ -73,7 +76,7 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         self.selectAttributeCombo.activated.connect(self.setSelectedAttribute)
         self.selectFeatureCombo.activated.connect(self.setSelectedFeature)
         self.makeIntersectionButton.clicked.connect(self.calculateIntersection)
-
+        self.startPushButton.clicked.connect(self.makeItGreen)
         # make buffer layer
         self.bufferPushButton.clicked.connect(self.calculateBuffer)
         self.clipButton.clicked.connect(self.newLayer)
@@ -156,20 +159,23 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
 
     # get values from field
     def updateFeature(self):
-        self.selectFeatureCombo.clear()
-        layer = self.getSelectedLayer()
-        if layer:
-            attribute = self.getSelectedAttribute()
-            features = uf.getFieldValues(layer, attribute, False, False)
-            if features:
-                fea = []
-                for feature in features[0]:
-                    fea.append(feature)
-                fea.sort()
-                self.selectFeatureCombo.addItems(fea)
-                self.setSelectedFeature()
-                # send list to the report list window
-                self.updateReport(fea)
+        try:
+            self.selectFeatureCombo.clear()
+            layer = self.getSelectedLayer()
+            if layer:
+                attribute = self.getSelectedAttribute()
+                features = uf.getFieldValues(layer, attribute, False, False)
+                if features:
+                    fea = []
+                    for feature in features[0]:
+                        fea.append(feature)
+                    fea.sort()
+                    self.selectFeatureCombo.addItems(fea)
+                    self.setSelectedFeature()
+                    # send list to the report list window
+                    self.updateReport(fea)
+        except:
+            pass
 
     def setSelectedFeature(self):
         layer = self.getSelectedLayer()
@@ -232,55 +238,55 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         cutter = uf.getLegendLayerByName(self.iface, "Buffers")
         # use the selected layer for cutting
         layer = uf.getLegendLayerByName(self.iface, "green")
-        if cutter.featureCount() > 0:
-            # get the intersections between the two layers
-            intersection = processing.runandload('qgis:intersection',layer,cutter,None)
-            intersection_layer = uf.getLegendLayerByName(self.iface, "Intersection")
-            # prepare results layer
-            save_path = "%s/dissolve_results.shp" % QgsProject.instance().homePath()
-            # dissolve grouping by origin id
-            dissolve = processing.runandload('qgis:dissolve',intersection_layer,False,'id',save_path)
-            dissolved_layer = uf.getLegendLayerByName(self.iface, "Dissolved")
-            # close intersections intermediary layer
-            """ QgsMapLayerRegistry.instance().removeMapLayers([intersection_layer.id()])"""
 
-            # add an 'area' field and calculate
-            # functiona can add more than one filed, therefore names and types are lists
-            wanted_layer = uf.getLegendLayerByName(self.iface, "Buffers")
-            dissolved_layer = uf.getLegendLayerByName(self.iface, "Dissolved")
-            uf.addFields(dissolved_layer,["green_area"], [QtCore.QVariant.Double])
-            uf.updateField(dissolved_layer, "green_area","$area")
-            dissolved_layer.updateFields()
-            save_path = "%s/dissolve_results.shp" % QgsProject.instance().homePath()
+        # get the intersections between the two layers
+        intersection = processing.runandload('qgis:intersection',layer,cutter,None)
+        intersection_layer = uf.getLegendLayerByName(self.iface, "Intersection")
+        # prepare results layer
+        save_path = "%s/dissolve_results.shp" % QgsProject.instance().homePath()
+        # dissolve grouping by origin id
+        dissolve = processing.runandload('qgis:dissolve',intersection_layer,False,'id',save_path)
+        dissolved_layer = uf.getLegendLayerByName(self.iface, "Dissolved")
+        # close intersections intermediary layer
+        """ QgsMapLayerRegistry.instance().removeMapLayers([intersection_layer.id()])"""
 
-            shp = uf.getLegendLayerByName(self.iface, "Buffers")
-            csv = uf.getLegendLayerByName(self.iface, "Dissolved")
-            # Set properties for the join
-            shpField='id'
-            csvField='id'
-            joinObject = QgsVectorJoinInfo()
-            joinObject.joinLayerId = csv.id()
-            joinObject.joinFieldName = csvField
-            joinObject.targetFieldName = shpField
-            joinObject.memoryCache = True
-            shp.addJoin(joinObject)
-            # add an 'total_area' field and calculate
-            straal = float(self.bufferLineEdit.text())
-            uf.addFields(wanted_layer, ["total_area"], [QtCore.QVariant.Double])
-            uf.updateField(wanted_layer, "total_area"," 3.14159265359 * ((%d)^2)" % straal )
-            # add an 'percentage_green' field and calculate
-            uf.addFields(wanted_layer, ["green_perc"], [QtCore.QVariant.Double])
-            uf.updateField(wanted_layer, "green_perc","(%s /%s)* 100" % ('Dissolved_green_area', 'total_area'))
-            layer1 = QgsMapLayerRegistry.instance().mapLayersByName("Buffers")[0]
-            layer2 = QgsMapLayerRegistry.instance().mapLayersByName("Intersection")[0]
-            layer3 = QgsMapLayerRegistry.instance().mapLayersByName("Dissolved")[0]
-            toc = self.iface.legendInterface()
-            groups = toc.groups()
-            groupIndex = groups.index(u'output')
-            # move layer to output folder
-            toc.moveLayer(layer1, groupIndex)
-            toc.moveLayer(layer2, groupIndex)
-            toc.moveLayer(layer3, groupIndex)
+        # add an 'area' field and calculate
+        # functiona can add more than one filed, therefore names and types are lists
+        wanted_layer = uf.getLegendLayerByName(self.iface, "Buffers")
+        dissolved_layer = uf.getLegendLayerByName(self.iface, "Dissolved")
+        uf.addFields(dissolved_layer,["green_area"], [QtCore.QVariant.Double])
+        uf.updateField(dissolved_layer, "green_area","$area")
+        dissolved_layer.updateFields()
+        save_path = "%s/dissolve_results.shp" % QgsProject.instance().homePath()
+
+        shp = uf.getLegendLayerByName(self.iface, "Buffers")
+        csv = uf.getLegendLayerByName(self.iface, "Dissolved")
+        # Set properties for the join
+        shpField='id'
+        csvField='id'
+        joinObject = QgsVectorJoinInfo()
+        joinObject.joinLayerId = csv.id()
+        joinObject.joinFieldName = csvField
+        joinObject.targetFieldName = shpField
+        joinObject.memoryCache = True
+        shp.addJoin(joinObject)
+        # add an 'total_area' field and calculate
+        straal = float(self.bufferLineEdit.text())
+        uf.addFields(wanted_layer, ["total_area"], [QtCore.QVariant.Double])
+        uf.updateField(wanted_layer, "total_area"," 3.14159265359 * ((%d)^2)" % straal )
+        # add an 'percentage_green' field and calculate
+        uf.addFields(wanted_layer, ["green_perc"], [QtCore.QVariant.Double])
+        uf.updateField(wanted_layer, "green_perc","(%s /%s)* 100" % ('Dissolved_green_area', 'total_area'))
+        layer1 = QgsMapLayerRegistry.instance().mapLayersByName("Buffers")[0]
+        layer2 = QgsMapLayerRegistry.instance().mapLayersByName("Intersection")[0]
+        layer3 = QgsMapLayerRegistry.instance().mapLayersByName("Dissolved")[0]
+        toc = self.iface.legendInterface()
+        groups = toc.groups()
+        groupIndex = groups.index(u'output')
+        # move layer to output folder
+        toc.moveLayer(layer1, groupIndex)
+        toc.moveLayer(layer2, groupIndex)
+        toc.moveLayer(layer3, groupIndex)
 
     # make new layer from selected features
     def newLayer(self):
@@ -314,7 +320,6 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         groups = toc.groups()
         groupIndex = groups.index(u'output')
         toc.setLayerVisible(layer, True)
-        
         inputlayer2 = uf.getLegendLayerByName(self.iface, "green")
         cliplayer = uf.getLegendLayerByName(self.iface, "selected boundaries")
         processing.runandload("qgis:clip", inputlayer2, cliplayer, "memory:greenlayer")
@@ -326,6 +331,10 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         toc.moveLayer(layer, groupIndex)
         toc.moveLayer(layer2, groupIndex)
         toc.setLayerVisible(layer2, True)
+        vLayer = uf.getLegendLayerByName(self.iface, "selected boundaries")
+        canvas = self.iface.mapCanvas()
+        extent = vLayer.extent()
+        canvas.setExtent(extent)
 
 
     # set green percentage (add new field)
@@ -349,31 +358,33 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         input_layer = uf.getLegendLayerByName(self.iface, "Buffers")
         output_layer = QgsVectorLayer('POINTS?crs=EPSG:28992', "outputfile", "memory")
         processing.runalg('qgis:polygoncentroids', input_layer, output_layer)
+
+    def makeItGreen(self):
+
         # apply layer style
-
-
         # opens the qml stylefile and edits the rules
-        file_path = os.path.normpath("C:/Users/robbr/Desktop/outputfiles.qml")
-        perc = 5
+        file_path = os.path.normpath(self.plugin_path + "/styles/outputfiles.qml")
+        file_path2 = os.path.normpath(self.plugin_path + "/styles/outputfiles2.qml")
+        perc = int(self.percentageLineEdit.text())
         replacements = {
-            """      <rule filter="green_perc >= 0.089780 AND green_perc &lt;= 10.000000" key="{9825544c-a679-41ac-af7c-10012f165b6f}" symbol="0" label="Onvoldoende 0.1 - 10.0 "/>""":
-            """      <rule filter="green_perc >= 0.0 AND green_perc &lt;= """ + str(perc - 2.5) + '\"' + """ key="{9825544c-a679-41ac-af7c-10012f165b6f}" symbol="0" label="Onvoldoende" "/>""",
+            """      <rule filter="green_perc >= 0 AND green_perc &lt; 10 " key="{9825544c-a679-41ac-af7c-10012f165b6f}" symbol="0" label="Onvoldoende 0.1 - 10.0 "/>""":
+            """      <rule filter="green_perc >= 0.0 AND green_perc &lt;= """ + str(perc - (0.333 * perc)) + ' \"' + """ key="{9825544c-a679-41ac-af7c-10012f165b6f}" symbol="0" label="Onvoldoende "/>""",
             """      <rule filter="green_perc > 10.000000 AND green_perc &lt;= 20.000000" key="{cddc3e79-9186-4b56-92dc-f107f0f7bf0c}" symbol="1" label="Matig 10.0 - 20.0 "/>""":
-            """      <rule filter="green_perc >= """ + str(perc-2.5) + """ AND green_perc &lt;= """ + str(perc+2.5) + "\"" + """ key="{9825544c-a679-41ac-af7c-10012f165b6f}" symbol="0" label="Matig" "/>""",
-            """      <rule filter="green_perc > 10.000000 AND green_perc &lt;= 20.000000" key="{1e6b826e-d631-4fa1-8e6f-b23733e83b61}" symbol="2" label="Goed 10.0 - 20.0 "/>""":
-            """      <rule filter="green_perc > """ + str(perc + 2.5) + '\"' + """ key="{1e6b826e-d631-4fa1-8e6f-b23733e83b61}" symbol="2" label="Goed" "/>"""
-            }
+            """      <rule filter="green_perc >= """ + str(perc-(0.333 * perc)) + """ AND green_perc &lt; """ + str(perc) + "\"" + """ key="{9825544c-a679-41ac-af7c-10012f165b6f}" symbol="1" label="Matig "/>""",
+            """      <rule filter="green_perc > 20" key="{1e6b826e-d631-4fa1-8e6f-b23733e83b61}" symbol="2" label="Goed 10.0 - 20.0 "/>""":
+            """      <rule filter="green_perc >= """ + str(perc) + '\"' + """ key="{1e6b826e-d631-4fa1-8e6f-b23733e83b61}" symbol="2" label="Goed "/>"""
+             }
         lines = []
         with open(file_path) as infile:
             for line in infile:
                 for src, target in replacements.iteritems():
                     line = line.replace(src, target)
                 lines.append(line)
-        with open(file_path, 'w') as outfile:
+        with open(file_path2, 'w') as outfile:
             for line in lines:
                 outfile.write(line)
-
-        output_layer.loadNamedStyle(file_path)
+        output_layer = uf.getLegendLayerByName(self.iface, "Buffers")
+        output_layer.loadNamedStyle(file_path2)
 
 
 
