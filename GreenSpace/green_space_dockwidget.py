@@ -164,16 +164,17 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
             layer = self.getSelectedLayer()
             if layer:
                 attribute = self.getSelectedAttribute()
-                features = uf.getFieldValues(layer, attribute, False, False)
+                uf.selectFeaturesByExpression(layer, " %s = '1' "% 'Demo_on')
+                features = uf.getFieldValues(layer, attribute, False, True)
                 if features:
                     fea = []
                     for feature in features[0]:
                         fea.append(feature)
-                    fea.sort()
-                    self.selectFeatureCombo.addItems(fea)
-                    self.setSelectedFeature()
-                    # send list to the report list window
-                    self.updateReport(fea)
+                fea.sort()
+                self.selectFeatureCombo.addItems(fea)
+                self.setSelectedFeature()
+                # send list to the report list window
+                self.updateReport(fea)
         except:
             pass
 
@@ -230,6 +231,11 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
             groups = toc.groups()
             groupIndex = groups.index(u'output')
             toc.moveLayer(layer, groupIndex)
+            mc = self.iface.mapCanvas()
+        for layer in mc.layers():
+            if layer.type() == layer.VectorLayer:
+                layer.removeSelection()
+        mc.refresh()
 
     def refreshCanvas(self, layer):
         if self.canvas.isCachingEnabled():
@@ -341,6 +347,11 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         canvas = self.iface.mapCanvas()
         extent = vLayer.extent()
         canvas.setExtent(extent)
+        mc = self.iface.mapCanvas()
+        for layer in mc.layers():
+            if layer.type() == layer.VectorLayer:
+                layer.removeSelection()
+        mc.refresh()
 
 
     # set green percentage (add new field)
@@ -350,12 +361,11 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         uf.addFields(wanted_layer, ["wanted_perc"], [QtCore.QVariant.Double])
         uf.updateField(wanted_layer, "wanted_perc", "%d" % perc)
 
-    def makeItGreen(self):
         layer1 = QgsMapLayerRegistry.instance().mapLayersByName("Buffers")[0]
         layer2 = QgsMapLayerRegistry.instance().mapLayersByName("Intersection")[0]
         layer3 = QgsMapLayerRegistry.instance().mapLayersByName("Dissolved")[0]
         toc = self.iface.legendInterface()
-        toc.setLayerVisible(layer1, True)
+        toc.setLayerVisible(layer1, False)
         toc.setLayerVisible(layer2, False)
         toc.setLayerVisible(layer3, False)
         layer4 = QgsMapLayerRegistry.instance().mapLayersByName("memory:greenlayer")[0]
@@ -396,7 +406,13 @@ class GreenSpaceDockWidget(QtGui.QDockWidget, FORM_CLASS):
         groupIndex13 = groups.index(u'input')
         toc.setGroupExpanded(groupIndex12, True)
         toc.setGroupExpanded(groupIndex13, True)
+        style = os.path.normpath(self.plugin_path + "/styles/greenperc.qml")
+        output_layer.loadNamedStyle(style)
 
+    def makeItGreen(self):
+        layer1 = QgsMapLayerRegistry.instance().mapLayersByName("Buffers")[0]
+        toc = self.iface.legendInterface()
+        toc.setLayerVisible(layer1, True)
 
 
 
